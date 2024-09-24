@@ -1,9 +1,13 @@
 import { PickType } from '@nestjs/swagger';
 import { IsNotEmpty, IsStrongPassword } from 'class-validator';
 import { MESSAGES } from 'src/constants/message.constant';
-import { User } from 'src/users/entities/user.entity';
+import { Users } from 'src/users/entities/users.entity';
 
-export class SignUpDto extends PickType(User, ['email', 'password', 'nickName']) {
+export class SignUpDto extends PickType(Users, [
+  'email',
+  'password',
+  'nickName',
+]) {
   /**
    *  비밀번호 확인
    * @example "Example1!"

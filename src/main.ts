@@ -8,12 +8,14 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
 
-
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
     }),
   );
+
+  // 글로벌 URL 프리픽스 설정
+  app.setGlobalPrefix('api/v1', { exclude: ['/health-check'] });
 
   // Swagger 설정
   const config = new DocumentBuilder()
@@ -23,14 +25,14 @@ async function bootstrap() {
     .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' })
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/v1', app, document, {
+  SwaggerModule.setup('api/v1/swagger', app, document, {
     swaggerOptions: {
       persistAuthorization: true,
       tagsSorter: 'alpha',
       operationsSorter: 'alpha',
     },
   });
-  
+
   const port = configService.get<number>('PORT');
   await app.listen(port);
 }

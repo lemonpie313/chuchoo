@@ -1,44 +1,31 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
-import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'src/users/entities/user.entity';
-import { Repository } from 'typeorm';
-import bcrypt from 'bcrypt';
-import { MESSAGES } from 'src/constants/message.constant';
 import { SignUpDto } from './dtos/sign-up.dto';
-
+import { InjectRepository } from '@nestjs/typeorm';
+import { Users } from 'src/users/entities/users.entity';
+import { Repository } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
+import bcrypt from 'bcrypt';
+import { SignInDto } from './dtos/sign-in.dto';
+import { JwtService } from '@nestjs/jwt';
 @Injectable()
 export class AuthService {
   constructor(
     private readonly configService: ConfigService,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
+    @InjectRepository(Users) private readonly userRepository: Repository<Users>,
   ) {}
-  // 회원가입
-  async signUp({
-    nickName,
-    email,
-    password,
-    passwordConfirm,
-    //profileImage,
-  }: SignUpDto) {
-    // 기존 이메일로 가입된 이력이 있을 경우 False
-    const existedEmail = await this.userRepository.findOneBy({ email });
-    if (existedEmail)
-      throw new BadRequestException(MESSAGES.AUTH.COMMON.DUPLICATED);
 
-    // 비밀번호가 Null값일 때, False 반환
-    if (!password)
-      throw new BadRequestException(MESSAGES.AUTH.COMMON.PASSWORD.REQUIRED);
-
-    // 비밀번호와 비밀번호 확인이랑 일치하는 지
+  async signUp({ email, password, passwordConfirm, nickName }: SignUpDto) {
     const isPasswordMatched = password === passwordConfirm;
     if (!isPasswordMatched) {
       throw new BadRequestException(
-        MESSAGES.AUTH.COMMON.PASSWORD_CONFIRM.NOT_MATCHED_WITH_PASSWORD,
+        '비밀번호와 비밀번호 확인이 서로 일치하지 않습니다.',
       );
+    }
+
+    const existedUser = await this.userRepository.findOneBy({ email });
+    if (existedUser) {
+      throw new BadRequestException('이미 가입 된 이메일 입니다.');
     }
 
     const hashRounds = this.configService.get<number>('PASSWORD_HASH');
@@ -49,8 +36,35 @@ export class AuthService {
       password: hashedPassword,
       nickName,
     });
-    delete user.password;
 
-    return user;
+    return {
+      userId: user.userId,
+      email: user.email,
+      nickName: user.nickName,
+    };
+  }
+
+  signIn(userId: number) {
+    const payload = { userId };
+    const accessToken = this.jwtService.sign(payload);
+
+    return { accessToken };
+  }
+
+  async validateUser({ email, password }: SignInDto) {
+    const user = await this.userRepository.findOne({
+      where: { email },
+      select: { userId: true, password: true },
+    });
+    const isPasswordMatched = bcrypt.compareSync(
+      password,
+      user?.password ?? '',
+    );
+
+    if (!user || !isPasswordMatched) {
+      return null;
+    }
+
+    return { userId: user.userId };
   }
 }

@@ -1,4 +1,36 @@
-import { Controller } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  HttpStatus,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
+import { UsersService } from './users.service';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
+@ApiTags('사용자')
 @Controller('users')
-export class UsersController {}
+export class UserController {
+  constructor(private readonly usersService: UsersService) {}
+
+  /**
+   * 내 정보 조회
+   * @param req
+   * @returns
+   */
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Get('/me')
+  async findMe(@Request() req) {
+    const userId = req.user.id;
+
+    const data = await this.usersService.findOneById(userId);
+
+    return {
+      statusCode: HttpStatus.OK,
+      message: '내 정보 조회에 성공했습니다.',
+      data,
+    };
+  }
+}
