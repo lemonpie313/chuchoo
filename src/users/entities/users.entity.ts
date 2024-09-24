@@ -32,13 +32,13 @@ import { UserRole } from 'src/users/types/user-role.type';
 //   import { IsValidNameConstraint } from 'src/util/decorators/is-valid-name-constraint';
 
 @Entity('users')
-export class User {
+export class Users {
   @PrimaryGeneratedColumn({ unsigned: true })
   userId: number;
 
   /**
    * 닉네임
-   * @example"타로"
+   * @example "타로"
    */
   @IsNotEmpty({ message: MESSAGES.AUTH.COMMON.NAME.REQUIRED })
   @IsString()

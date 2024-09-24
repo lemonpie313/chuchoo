@@ -16,7 +16,9 @@ import { typeOrmModuleOptions } from './configs/database.config';
       envFilePath: '.env',
     }),
     TypeOrmModule.forRootAsync(typeOrmModuleOptions),
-    AuthModule, UsersModule],
+    AuthModule,
+    UsersModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
